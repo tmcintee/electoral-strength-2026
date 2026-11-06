@@ -1,4 +1,5 @@
 require(tidyverse)
+source("house_aggregate.R")
 calculate_strength <- function(df_grouped)
 {
 	df_processed <- df_grouped %>%
@@ -15,15 +16,15 @@ calculate_strength <- function(df_grouped)
 			total_votes) %>%
 		mutate(strength_composite = (2*votes - median(votes)- mean(votes) - 
 				2*votes_opp + median(votes_opp) + mean(votes_opp))/
-				sqrt(total_votes),
+				sqrt(100*total_votes), # Arbitrary scalar factor of 10 to bring the observed score range to a more intuitive range.
 			vote_vs_median = votes - median(votes),
 			vote_vs_median_opp = votes_opp - median(votes_opp),
 			vote_vs_mean = votes - mean(votes),
 			vote_vs_mean_opp = votes_opp - mean(votes_opp),
 			share_vs_median = vote_share - median(vote_share),
 			share_vs_median_opp = vote_opp_share - median(vote_opp_share),
-			vote_vs_mean = vote_share - mean(vote_share),
-			vote_vs_mean_opp = vote_opp_share - mean(vote_opp_share)) %>%
+			share_vs_mean = vote_share - mean(vote_share),
+			share_vs_mean_opp = vote_opp_share - mean(vote_opp_share)) %>%
 		arrange(strength_composite) %>%
 		ungroup()
 	return(df_processed)
@@ -54,6 +55,7 @@ ballots_of_interest <- statewide_returns_tall %>%
 statewide_returns_most <- statewide_returns_tall %>%
 	filter(partisan,
 		two_major,
+		!is.na(votes),
 		vote_share > 0.1)
 
 midterm_returns <- statewide_returns_most %>%
@@ -68,7 +70,16 @@ within_ballot <- statewide_returns_most %>%
 
 midterm_benchmark <- midterm_returns %>%
 	group_by(state,office,party_std) %>%
-	filter(!is.na(votes)) %>%
+	calculate_strength() %>%
+	filter_interest()
+
+within_office <- statewide_returns_most %>%
+	group_by(state,office,party_std) %>%
+	calculate_strength() %>%
+	filter_interest()
+
+within_state <- statewide_returns_most %>%
+	group_by(state,party_std) %>%
 	calculate_strength() %>%
 	filter_interest()
 
@@ -80,22 +91,33 @@ presidential_benchmark <- statewide_returns_most %>%
 	filter_interest()
 
 
-three_strength_measures <- within_ballot %>%
+four_strength_measures <- within_ballot %>%
 	select(candidate, party_std, office, state, strength_composite) %>%
-	rename(within_ballot_strength = strength_composite) %>%
-	inner_join(presidential_benchmark %>%
+	rename(within_ballot = strength_composite) %>%
+	left_join(presidential_benchmark %>%
 			select(candidate,strength_composite) %>%
-			rename(presidential_strength = strength_composite)) %>%
-	inner_join(midterm_benchmark %>%
+			rename(vs_presidential = strength_composite)) %>%
+	left_join(within_office %>%
 			select(candidate,strength_composite) %>%
-			rename(midterm_strength = strength_composite)) %>%
-	mutate(compounded_strength_measure = within_ballot_strength + presidential_strength + midterm_strength) %>%
-	arrange(-compounded_strength_measure)
+			rename(within_office = strength_composite)) %>%
+	left_join(within_state %>%
+			select(candidate,strength_composite) %>%
+			rename(within_state = strength_composite)) %>%
+	mutate(strength = (within_ballot + vs_presidential + within_office + within_state)/(4 - (within_ballot == 0))) %>%
+	arrange(-strength)
 
-dems <- three_strength_measures %>%
-	filter(party_std == "DEM")
-reps <- three_strength_measures %>%
-	filter(party_std == "REP")
+dems <- four_strength_measures %>%
+	filter(party_std == "DEM") %>%
+	mutate(normalized = 100 + 15*(strength - mean(strength))/sd(strength))
+reps <- four_strength_measures %>%
+	filter(party_std == "REP") %>%
+	mutate(normalized = 100 + 15*(strength - mean(strength))/sd(strength))
 
 dem_sen <- dems %>%
-	filter(office == "Senate")
+	filter(office == "Senate") %>%
+	mutate(normalized = 100 + 15*(strength - mean(strength))/sd(strength))
+
+measures <- c("within_ballot", "vs_presidential", "within_office", "within_state")
+ggplot(dems, aes(color = office, x = strength, y = vs_presidential - within_office, label = state))+
+	geom_label(alpha = 0.5)+
+	scale_color_manual(values = c("darkgreen","brown"))

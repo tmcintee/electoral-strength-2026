@@ -13,7 +13,8 @@ calculate_strength <- function(df_grouped)
 			votes_opp,
 			vote_share,
 			vote_opp_share,
-			total_votes) %>%
+			total_votes,
+			magnitude) %>%
 		mutate(strength_composite = (2*votes - median(votes)- mean(votes) - 
 				2*votes_opp + median(votes_opp) + mean(votes_opp))/
 				sqrt(100*total_votes), # Arbitrary scalar factor of 10 to bring the observed score range to a more intuitive range.
@@ -121,3 +122,5 @@ measures <- c("within_ballot", "vs_presidential", "within_office", "within_state
 ggplot(dems, aes(color = office, x = strength, y = vs_presidential - within_office, label = state))+
 	geom_label(alpha = 0.5)+
 	scale_color_manual(values = c("darkgreen","brown"))
+
+mi_check <- statewide_returns_most %>% filter(state == "Michigan" & year == 2026)

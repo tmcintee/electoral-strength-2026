@@ -48,3 +48,4 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 electoral-strength-2026.Rproj
+/ouptuts

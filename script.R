@@ -93,7 +93,7 @@ presidential_benchmark <- statewide_returns_most %>%
 
 
 four_strength_measures <- within_ballot %>%
-	select(candidate, party_std, office, state, strength_composite) %>%
+	#select(candidate, party_std, office, state, strength_composite) %>%
 	rename(within_ballot = strength_composite) %>%
 	left_join(presidential_benchmark %>%
 			select(candidate,strength_composite) %>%
@@ -109,18 +109,42 @@ four_strength_measures <- within_ballot %>%
 
 dems <- four_strength_measures %>%
 	filter(party_std == "DEM") %>%
-	mutate(normalized = 100 + 15*(strength - mean(strength))/sd(strength))
+	mutate(normalized_dem = 100 + 15*(strength - mean(strength))/sd(strength))
 reps <- four_strength_measures %>%
 	filter(party_std == "REP") %>%
-	mutate(normalized = 100 + 15*(strength - mean(strength))/sd(strength))
+	mutate(normalized_rep = 100 + 15*(strength - mean(strength))/sd(strength))
 
 dem_sen <- dems %>%
 	filter(office == "Senate") %>%
-	mutate(normalized = 100 + 15*(strength - mean(strength))/sd(strength))
-
-measures <- c("within_ballot", "vs_presidential", "within_office", "within_state")
+	select(candidate,state,normalized_dem,strength,vs_presidential,within_ballot,within_office,within_state)
 ggplot(dems, aes(color = office, x = strength, y = vs_presidential - within_office, label = state))+
 	geom_label(alpha = 0.5)+
 	scale_color_manual(values = c("darkgreen","brown"))
 
 mi_check <- statewide_returns_most %>% filter(state == "Michigan" & year == 2026)
+
+joined <- reps %>%
+	select(state, office, candidate) %>%
+	rename(Republican = candidate) %>%
+	inner_join(dems) %>%
+	rename(State = state,
+		Office = office,
+		Democrat = candidate,
+		Democratic_Performance_Advantage = strength,
+		Democratic_vote = votes,
+		Republican_vote = votes_opp) %>%
+	mutate(Democratic_Margin_of_Victory = vote_share - vote_opp_share) %>%
+	select(State,
+		Office,
+		Democrat,
+		Republican,
+		Democratic_Performance_Advantage,
+		Democratic_vote,
+		Republican_vote,
+		Democratic_Margin_of_Victory) %>%
+	arrange(-Democratic_Performance_Advantage)
+write_csv(joined,"outputs/summary_performance_2026_senate_governors.csv")
+write_csv(presidential_benchmark,"outputs/2026_senate_governors_versus_presidential.csv")
+write_csv(within_ballot,"outputs/2026_senate_governors_within_ballot.csv")
+write_csv(within_office,"outputs/2026_senate_governors_within_office.csv")
+write_csv(within_office,"outputs/2026_senate_governors_within_state.csv")

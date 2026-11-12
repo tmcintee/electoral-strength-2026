@@ -48,7 +48,6 @@ state_ok <- district_ok %>%
 		no_rep = sum(!has_rep),
 		missing_cnt = sum(!all_votes),
 		.groups = "drop") %>%
-	anti_join(exclude, by = c("state_abbr", "year")) %>%
 	mutate(qualifies = n_ok == n_districts & n_districts >= min_districts)
 
 message(sprintf("%d of %d multi-district state-years qualify",

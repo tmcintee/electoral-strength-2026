@@ -242,71 +242,71 @@ joined <- reps %>%
 # Add "short name" field? Or use state TLA? Probably 2-letter codes easiest.
 presidential_votes <- statewide_returns_most %>%
 	filter(office == "President" & party_std == "REP") %>%
-	select(state,vote_share,vote_opp_share) %>%
+	select(state,votes,votes_opp) %>%
 	group_by(state) %>%
-	summarize(presidential_R_mean = mean(vote_share),
-		presidential_D_mean = mean(vote_opp_share),
-		presidential_R_median = median(vote_share),
-		presidential_D_median = median(vote_opp_share))
+	summarize(presidential_R_mean = mean(votes),
+		presidential_D_mean = mean(votes_opp),
+		presidential_R_median = median(votes),
+		presidential_D_median = median(votes_opp))
 
 past_governor_votes <- statewide_returns_most %>%
 	filter(year != 2026,office == "Governor",party_std == "REP") %>%
-	select(state,vote_share,vote_opp_share) %>%
+	select(state,votes,votes_opp) %>%
 	group_by(state) %>%
-	summarize(within_office_R_mean = mean(vote_share),
-		within_office_D_mean = mean(vote_opp_share),
-		within_office_R_median = median(vote_share),
-		within_office_D_median = median(vote_opp_share)) %>%
+	summarize(within_office_R_mean = mean(votes),
+		within_office_D_mean = mean(votes_opp),
+		within_office_R_median = median(votes),
+		within_office_D_median = median(votes_opp)) %>%
 	mutate(office = "Governor")
 
 past_senator_votes <- statewide_returns_most %>%
 	filter(year != 2026,office == "Senate",party_std == "REP") %>%
-	select(state,vote_share,vote_opp_share) %>%
+	select(state,votes,votes_opp) %>%
 	group_by(state) %>%
-	summarize(within_office_R_mean = mean(vote_share),
-		within_office_D_mean = mean(vote_opp_share),
-		within_office_R_median = median(vote_share),
-		within_office_D_median = median(vote_opp_share)) %>%
+	summarize(within_office_R_mean = mean(votes),
+		within_office_D_mean = mean(votes_opp),
+		within_office_R_median = median(votes),
+		within_office_D_median = median(votes_opp)) %>%
 	mutate(office = "Senate")
 
 within_ballot_sen <- statewide_returns_most %>%
 	filter(year == 2026,office != "Senate",party_std == "REP") %>%
-	select(state,vote_share,vote_opp_share) %>%
+	select(state,votes,votes_opp) %>%
 	group_by(state) %>%
-	summarize(within_ballot_R_mean = mean(vote_share),
-		within_ballot_D_mean = mean(vote_opp_share),
-		within_ballot_R_median = median(vote_share),
-		within_ballot_D_median = median(vote_opp_share)) %>%
+	summarize(within_ballot_R_mean = mean(votes),
+		within_ballot_D_mean = mean(votes_opp),
+		within_ballot_R_median = median(votes),
+		within_ballot_D_median = median(votes_opp)) %>%
 	mutate(office = "Senate")
 
 within_ballot_gov <- statewide_returns_most %>%
 	filter(year == 2026,office != "Governor",party_std == "REP") %>%
-	select(state,vote_share,vote_opp_share) %>%
+	select(state,votes,votes_opp) %>%
 	group_by(state) %>%
-	summarize(within_ballot_R_mean = mean(vote_share),
-		within_ballot_D_mean = mean(vote_opp_share),
-		within_ballot_R_median = median(vote_share),
-		within_ballot_D_median = median(vote_opp_share)) %>%
+	summarize(within_ballot_R_mean = mean(votes),
+		within_ballot_D_mean = mean(votes_opp),
+		within_ballot_R_median = median(votes),
+		within_ballot_D_median = median(votes_opp)) %>%
 	mutate(office = "Governor")
 
 within_state_sen <- statewide_returns_most %>%
 	filter(!(year == 2026 & office == "Senate"),party_std == "REP") %>%
-	select(state,vote_share,vote_opp_share) %>%
+	select(state,votes,votes_opp) %>%
 	group_by(state) %>%
-	summarize(within_state_R_mean = mean(vote_share),
-		within_state_D_mean = mean(vote_opp_share),
-		within_state_R_median = median(vote_share),
-		within_state_D_median = median(vote_opp_share)) %>%
+	summarize(within_state_R_mean = mean(votes),
+		within_state_D_mean = mean(votes_opp),
+		within_state_R_median = median(votes),
+		within_state_D_median = median(votes_opp)) %>%
 	mutate(office = "Senate")
 
 within_state_gov <- statewide_returns_most %>%
 	filter(!(year == 2026 & office == "Governor"),party_std == "REP") %>%
-	select(state,vote_share,vote_opp_share) %>%
+	select(state,votes,votes_opp) %>%
 	group_by(state) %>%
-	summarize(within_state_R_mean = mean(vote_share),
-		within_state_D_mean = mean(vote_opp_share),
-		within_state_R_median = median(vote_share),
-		within_state_D_median = median(vote_opp_share)) %>%
+	summarize(within_state_R_mean = mean(votes),
+		within_state_D_mean = mean(votes_opp),
+		within_state_R_median = median(votes),
+		within_state_D_median = median(votes_opp)) %>%
 	mutate(office = "Governor")
 
 within_state <- bind_rows(within_state_sen,within_state_gov)
@@ -315,33 +315,58 @@ within_office <- bind_rows(past_senator_votes,past_governor_votes)
 
 comparison <- statewide_returns_most %>%
 	filter(year == 2026,office %in% c("Governor","Senate"),party_std == "REP",state != "Alaska") %>%
-	select(office,state,vote_share,vote_opp_share) %>%
-	rename(votes_R = vote_share,
-		votes_D = vote_opp_share) %>%
+	select(office,state,votes,votes_opp) %>%
+	rename(votes_R = votes,
+		votes_D = votes_opp) %>%
 	left_join(presidential_votes) %>%
 	left_join(within_state) %>%
 	left_join(within_office) %>%
 	left_join(within_ballot) %>%
-	mutate(delta_presidential_R = votes_R - presidential_R_mean,
-		delta_presidential_D = votes_D - presidential_D_mean,
-		delta_ballot_R = votes_R - within_ballot_R_mean,
-		delta_ballot_D = votes_D - within_ballot_D_mean,
-		delta_office_R = votes_R - within_office_R_mean,
-		delta_office_D = votes_D - within_office_D_mean,
-		delta_state_R = votes_R - within_state_R_mean,
-		delta_state_D = votes_D - within_state_D_mean)
+	mutate(delta_presidential_R = (votes_R - presidential_R_mean)/presidential_R_mean,
+		delta_presidential_D = (votes_D - presidential_D_mean)/presidential_D_mean,
+		delta_ballot_R = (votes_R - within_ballot_R_mean)/within_ballot_R_mean,
+		delta_ballot_D = (votes_D - within_ballot_D_mean)/within_ballot_D_mean,
+		delta_office_R = (votes_R - within_office_R_mean)/within_office_R_mean,
+		delta_office_D = (votes_D - within_office_D_mean)/within_office_D_mean,
+		delta_state_R = (votes_R - within_state_R_mean)/within_state_R_mean,
+		delta_state_D = (votes_D - within_state_D_mean)/within_state_R_mean) %>%
+	mutate(state_abb = state.abb[match(state, state.name)])
 
 library(ggrepel)
 library(scales)
 options(scipen = 99)
-ggplot(comparison,aes(x = delta_presidential_R,
+ggplot(comparison %>% filter(state != "Vermont"),aes(x = delta_presidential_R,
 	y = delta_presidential_D,
 	color = delta_presidential_R - delta_presidential_D,
-	label = state))+
+	label = state_abb))+
 	geom_label()+
-	labs(x = "Change in Republican vote share",
-		y = "Change in Democratic vote share")+
+	labs(x = "Change in Republican votes",
+		y = "Change in Democratic votes",
+		color = "Net shift")+
 	facet_wrap(~office)+
-	scale_x_continuous(labels = label_percent())+
-	scale_y_continuous(labels = label_percent())+
-	scale_color_gradientn(colors = c("darkblue","darkblue","blue","darkgray","darkred"))
+	theme(axis.title  = element_text(size = 16), # axis labels
+		strip.text  = element_text(size = 16)) +
+	coord_equal()+
+	scale_y_continuous(labels = scales::label_percent()) +
+	scale_x_continuous(labels = scales::label_percent()) +
+	scale_color_gradientn(colors = c("darkblue","darkblue","darkred","darkred"),
+		labels = scales::label_percent())
+
+ggplot(comparison %>% filter(state != "Vermont"),aes(x = delta_ballot_R,
+	y = delta_ballot_D,
+	color = delta_ballot_R - delta_ballot_D,
+	label = state_abb))+
+	geom_label()+
+	
+	geom_label()+
+	labs(x = "Change in Republican votes",
+		y = "Change in Democratic votes",
+		color = "Net shift")+
+	facet_wrap(~office)+
+	theme(axis.title  = element_text(size = 16), # axis labels
+		strip.text  = element_text(size = 16)) +
+	coord_equal()+
+	scale_y_continuous(labels = scales::label_percent()) +
+	scale_x_continuous(labels = scales::label_percent()) +
+	scale_color_gradientn(colors = c("darkblue","darkblue","darkred","darkred"),
+		labels = scales::label_percent())

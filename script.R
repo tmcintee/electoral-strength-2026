@@ -47,9 +47,8 @@ statewide_returns_tall <- statewide_returns_tall %>%
 ballots_of_interest <- statewide_returns_tall %>%
 	filter(year == 2026,
 		office %in% c("Senate","Governor"),
-		is_deciding,
-		partisan,
-		two_major) %>%
+		#is_deciding,
+		partisan) %>%
 	select(ballot_id) %>%
 	distinct() %>%
 	pull(ballot_id)
@@ -342,7 +341,8 @@ ggplot(comparison %>% filter(state != "Vermont"),aes(x = delta_presidential_R,
 	geom_label()+
 	labs(x = "Change in Republican votes",
 		y = "Change in Democratic votes",
-		color = "Net shift")+
+		color = "Net shift",
+		title = "Shift relative to presidential votes")+
 	facet_wrap(~office)+
 	theme(axis.title  = element_text(size = 16), # axis labels
 		strip.text  = element_text(size = 16)) +
@@ -361,7 +361,8 @@ ggplot(comparison %>% filter(state != "Vermont"),aes(x = delta_ballot_R,
 	geom_label()+
 	labs(x = "Change in Republican votes",
 		y = "Change in Democratic votes",
-		color = "Net shift")+
+		color = "Net shift",
+		title = "Shift relative to within-ballot candidates")+
 	facet_wrap(~office)+
 	theme(axis.title  = element_text(size = 16), # axis labels
 		strip.text  = element_text(size = 16)) +
